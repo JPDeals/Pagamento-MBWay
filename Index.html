@@ -27,6 +27,7 @@ ol{padding-left:1.2rem;color:var(--mut)}ol b{color:var(--tx)}
 <h1>Pagamento por MB WAY</h1>
 <p class="sub">Indique o valor da sua encomenda. Receberá o número e a referência para pagar na app MB WAY.</p>
 <form id="f" novalidate>
+ <input type="text" id="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
  <label for="desc">Descrição da encomenda (opcional)</label>
  <input type="text" id="desc" maxlength="200" autocomplete="off">
  <label for="valor">Valor a pagar (€)</label>
@@ -62,7 +63,8 @@ ol{padding-left:1.2rem;color:var(--mut)}ol b{color:var(--tx)}
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)},cfg=null;
-google.script.run.withSuccessHandler(function(c){cfg=c;if(!c.configurado)$('err').textContent='Pagamento indisponível: número MB WAY por configurar.';}).getConfig();
+var API='COLOCAR_URL_EXEC_AQUI';
+fetch(API+'?action=config').then(function(r){return r.json()}).then(function(c){cfg=c;if(!c.configurado)$('err').textContent='Pagamento indisponível: número MB WAY por configurar.';}).catch(function(){$('err').textContent='Sem ligação ao servidor de pagamentos.';});
 function nifOk(n){if(!/^\d{9}$/.test(n))return false;var s=0;for(var i=0;i<8;i++)s+=+n[i]*(9-i);var r=s%11;return(r<2?0:11-r)===+n[8];}
 $('quero').onchange=function(){$('fat').className=this.checked?'on':'';};
 function copiar(t,b){var o=b.textContent;function ok(){b.textContent='Copiado';setTimeout(function(){b.textContent=o},1500)}
@@ -74,12 +76,13 @@ $('f').onsubmit=function(e){e.preventDefault();var er=$('err');er.textContent=''
  var q=$('quero').checked,nome=q?$('nome').value.trim():'',nif=q?$('nif').value.replace(/\s/g,''):'';
  if(q){if(!nome){er.textContent='Indique o nome para a fatura.';return}if(!nifOk(nif)){er.textContent='NIF inválido. Confirme os 9 dígitos.';return}}
  $('go').disabled=true;$('go').textContent='A gerar…';
- google.script.run.withSuccessHandler(function(r){
+ var corpo=JSON.stringify({descricao:$('desc').value,valor:v,nome:nome,nif:nif,website:$('website').value});
+ fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:corpo}).then(function(x){return x.json()}).then(function(j){
+  if(!j.ok)throw new Error(j.erro);var r=j.dados;
   $('rv').textContent=r.valor.toFixed(2).replace('.',',')+' €';$('rn').textContent=r.numero;$('rr').textContent=r.ref;
   $('fx').textContent=r.faturaNif?'Fatura com NIF registada para o nome indicado.':'Sem NIF: não foram registados dados para fatura completa.';
   $('f').style.display='none';$('res').className='res on';
   $('cn').onclick=function(){copiar(r.numero,this)};$('cr').onclick=function(){copiar(r.ref,this)};
- }).withFailureHandler(function(x){er.textContent=(x&&x.message?x.message:'Erro')+' Tente novamente.';$('go').disabled=false;$('go').textContent='Gerar dados de pagamento';})
- .registarPedido({descricao:$('desc').value,valor:v,nome:nome,nif:nif});};
+ }).catch(function(x){er.textContent=(x&&x.message?x.message:'Erro')+' Tente novamente.';$('go').disabled=false;$('go').textContent='Gerar dados de pagamento';});};
 })();
 </script></body></html>
