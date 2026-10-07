@@ -74,7 +74,7 @@ footer{margin-top:1.4rem;color:var(--mut);font-size:.8rem;line-height:1.45}
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)},cfg=null;
-var API='COLOCAR_URL_EXEC_AQUI';
+var API='https://script.google.com/macros/s/AKfycby8ob7-AFulObZLowOQFzsoqc7_OoM6PI9h--763eD-JwFhqExvJjxhM3gH_j8vQsk/exec';
 fetch(API+'?action=config').then(function(r){return r.json()}).then(function(c){cfg=c;if(!c.configurado)$('err').textContent='Pagamento indisponível: número MB WAY por configurar.';}).catch(function(){$('err').textContent='Sem ligação ao servidor de pagamentos.';});
 function nifOk(n){if(!/^\d{9}$/.test(n))return false;var s=0;for(var i=0;i<8;i++)s+=+n[i]*(9-i);var r=s%11;return(r<2?0:11-r)===+n[8];}
 function upd(){var q=$('quero').checked,e=$('ent').checked;$('fat').className='blk'+(q?' on':'');$('mor').className='blk'+(e?' on':'');$('nm').className='blk'+(q||e?' on':'');}
