@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-PT"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JPDeals — Pagamento MB WAY</title>
+<style>
+:root{--bg:#15101b;--card:#1f1827;--tx:#efe6d6;--mut:#a99bb0;--ouro:#c08810;--roxo:#684060;--err:#e58a8a;--ln:#3a2c45}
+@media (prefers-color-scheme:light){:root{--bg:#f6f1e8;--card:#fff;--tx:#2a2030;--mut:#6d5f75;--ouro:#9a6a05;--roxo:#684060;--err:#a53a3a;--ln:#ddd2e0}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:30rem;margin:0 auto;padding:1.5rem 1.1rem 3rem}
+h1{font:600 1.6rem/1.2 Georgia,'Times New Roman',serif;color:var(--ouro);margin:.2rem 0 .3rem}
+p.sub{color:var(--mut);margin:0 0 1.4rem}
+form,.res{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:1.1rem}
+label{display:block;font-weight:600;margin:.9rem 0 .25rem}label:first-child{margin-top:0}
+input[type=text],input[type=number],input[inputmode]{width:100%;padding:.7rem;border:1px solid var(--ln);border-radius:8px;background:transparent;color:var(--tx);font:inherit}
+input:focus,button:focus-visible{outline:2px solid var(--ouro);outline-offset:1px}
+.chk{display:flex;gap:.6rem;align-items:center;font-weight:400;margin:1rem 0 0}.chk input{width:1.2rem;height:1.2rem}
+.blk{display:none}.blk.on{display:block}
+button{width:100%;margin-top:1.2rem;padding:.85rem;border:0;border-radius:8px;background:var(--ouro);color:#15101b;font:700 1rem inherit;cursor:pointer}
+button.sec{background:transparent;color:var(--tx);border:1px solid var(--ln);margin-top:.5rem;padding:.6rem;font-weight:600}
+.err{color:var(--err);min-height:1.3rem;margin:.7rem 0 0;font-size:.92rem}
+.res{display:none}.res.on{display:block}
+.val{font:700 2.6rem/1.1 Georgia,serif;color:var(--ouro);margin:.1rem 0 .8rem}
+dl{margin:0}dt{color:var(--mut);font-size:.88rem;margin-top:.7rem}dd{margin:0;font-size:1.15rem;font-weight:600;word-break:break-all}
+ol{padding-left:1.2rem;color:var(--mut)}ol b{color:var(--tx)}
+.aviso{border-left:3px solid var(--roxo);padding:.1rem .8rem;color:var(--mut);margin:1rem 0 0;font-size:.92rem}
+</style></head><body><main>
+<h1>Pagamento por MB WAY</h1>
+<p class="sub">Indique o valor da sua encomenda. Receberá o número e a referência para pagar na app MB WAY.</p>
+<form id="f" novalidate>
+ <input type="text" id="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+ <label for="desc">Descrição da encomenda (opcional)</label>
+ <input type="text" id="desc" maxlength="200" autocomplete="off">
+ <label for="valor">Valor a pagar (€)</label>
+ <input type="text" id="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+ <label class="chk"><input type="checkbox" id="quero"> Quero fatura com NIF</label>
+ <label class="chk"><input type="checkbox" id="ent"> Preciso de entrega (morada)</label>
+ <div id="nm" class="blk"><label for="nome">Nome (fatura / entrega)</label>
+  <input type="text" id="nome" maxlength="120" autocomplete="name"></div>
+ <div id="fat" class="blk"><label for="nif">NIF</label>
+  <input type="text" id="nif" inputmode="numeric" maxlength="9" autocomplete="off"></div>
+ <div id="mor" class="blk"><label for="morada">Morada de entrega</label>
+  <input type="text" id="morada" maxlength="200" autocomplete="street-address">
+  <label for="cp">Código postal</label>
+  <input type="text" id="cp" inputmode="numeric" maxlength="8" placeholder="0000-000" autocomplete="postal-code">
+  <label for="loc">Localidade</label>
+  <input type="text" id="loc" maxlength="80" autocomplete="address-level2"></div>
+ <p class="err" id="err" role="alert"></p>
+ <button type="submit" id="go">Gerar dados de pagamento</button>
+</form>
+<section class="res" id="res" aria-live="polite">
+ <div class="val" id="rv"></div>
+ <dl>
+  <dt>Número MB WAY</dt><dd id="rn"></dd>
+  <dt>Referência (escreva na descrição)</dt><dd id="rr"></dd>
+ </dl>
+ <ol>
+  <li>Na app MB WAY, escolha <b>Enviar dinheiro</b>.</li>
+  <li>Introduza o número acima e o <b>valor exato</b>.</li>
+  <li>Escreva a <b>referência</b> na descrição e confirme.</li>
+  <li>Envie o comprovativo pelo WhatsApp, indicando a referência.</li>
+ </ol>
+ <button type="button" class="sec" id="cn">Copiar número</button>
+ <button type="button" class="sec" id="cr">Copiar referência</button>
+ <p class="aviso" id="fx"></p>
+ <p class="aviso">O pedido só fica concluído depois de confirmarmos a receção do pagamento.</p>
+</section>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},cfg=null;
+var API='COLOCAR_URL_EXEC_AQUI';
+fetch(API+'?action=config').then(function(r){return r.json()}).then(function(c){cfg=c;if(!c.configurado)$('err').textContent='Pagamento indisponível: número MB WAY por configurar.';}).catch(function(){$('err').textContent='Sem ligação ao servidor de pagamentos.';});
+function nifOk(n){if(!/^\d{9}$/.test(n))return false;var s=0;for(var i=0;i<8;i++)s+=+n[i]*(9-i);var r=s%11;return(r<2?0:11-r)===+n[8];}
+function upd(){var q=$('quero').checked,e=$('ent').checked;$('fat').className='blk'+(q?' on':'');$('mor').className='blk'+(e?' on':'');$('nm').className='blk'+(q||e?' on':'');}
+$('quero').onchange=upd;$('ent').onchange=upd;
+function copiar(t,b){var o=b.textContent;function ok(){b.textContent='Copiado';setTimeout(function(){b.textContent=o},1500)}
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fb)}else fb();
+ function fb(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){}document.body.removeChild(a)}}
+$('f').onsubmit=function(e){e.preventDefault();var er=$('err');er.textContent='';
+ var v=Math.round(parseFloat($('valor').value.replace(',','.'))*100)/100;
+ if(!isFinite(v)||v<=0){er.textContent='Introduza um valor superior a 0.';return}
+ var q=$('quero').checked,en=$('ent').checked,nome=(q||en)?$('nome').value.trim():'',nif=q?$('nif').value.replace(/\s/g,''):'',mo=en?$('morada').value.trim():'',cp=en?$('cp').value.trim():'',lo=en?$('loc').value.trim():'';
+ if((q||en)&&!nome){er.textContent='Indique o nome.';return}
+ if(q&&!nifOk(nif)){er.textContent='NIF inválido. Confirme os 9 dígitos.';return}
+ if(en){if(!mo||!lo){er.textContent='Indique a morada e a localidade.';return}if(!/^\d{4}-\d{3}$/.test(cp)){er.textContent='Código postal inválido (formato 0000-000).';return}}
+ $('go').disabled=true;$('go').textContent='A gerar…';
+ var corpo=JSON.stringify({descricao:$('desc').value,valor:v,nome:nome,nif:nif,entrega:en,morada:mo,cp:cp,localidade:lo,website:$('website').value});
+ fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:corpo}).then(function(x){return x.json()}).then(function(j){
+  if(!j.ok)throw new Error(j.erro);var r=j.dados;
+  $('rv').textContent=r.valor.toFixed(2).replace('.',',')+' €';$('rn').textContent=r.numero;$('rr').textContent=r.ref;
+  $('fx').textContent=r.faturaNif?'Fatura com NIF registada para o nome indicado.':'Sem NIF: não foram registados dados para fatura completa.';if(r.entrega)$('fx').textContent+=' Morada de entrega registada.';
+  $('f').style.display='none';$('res').className='res on';
+  $('cn').onclick=function(){copiar(r.numero,this)};$('cr').onclick=function(){copiar(r.ref,this)};
+ }).catch(function(x){er.textContent=(x&&x.message?x.message:'Erro')+' Tente novamente.';$('go').disabled=false;$('go').textContent='Gerar dados de pagamento';});};
+})();
+</script></body></html>
